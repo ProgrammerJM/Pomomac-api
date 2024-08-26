@@ -1,17 +1,24 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { db } from "../utils/db";
+import bcrypt from "bcrypt";
 
-async function CreateUser(email: string, password: string) {
+async function CreateUser({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) {
   // Create User with the provided values
-  const user = await prisma.user.create({
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await db.user.create({
     data: {
       email,
-      password,
+      password: hashedPassword,
     },
   });
 
   // Create UserSettings with default values and link it to the user
-  const userSettings = await prisma.userSetting.create({
+  const userSettings = await db.userSetting.create({
     data: {
       userId: user.id, // Link to the created user
       pomodoroDuration: 25,
@@ -23,8 +30,20 @@ async function CreateUser(email: string, password: string) {
   return { user, userSettings };
 }
 
-async function FindAllUsers() {
-  return await prisma.user.findMany();
+async function findUserByEmail(email: string) {
+  return db.user.findUnique({
+    where: {
+      email,
+    },
+  });
 }
 
-export default { CreateUser, FindAllUsers };
+async function findUserById(id: string) {
+  return db.user.findUnique({
+    where: {
+      id,
+    },
+  });
+}
+
+export { CreateUser, findUserByEmail, findUserById };
