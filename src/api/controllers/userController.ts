@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 import userServices from "../services/userServices";
 
 async function createUser(req: Request, res: Response) {
-  const { username, email, password } = req.body;
+  const { email, password } = req.body;
   try {
-    const user = await userServices.CreateUser(username, email, password);
+    const user = await userServices.CreateUser(email, password);
     console.log("User created successfully!");
     res.status(201).json(user);
   } catch (err: any) {
