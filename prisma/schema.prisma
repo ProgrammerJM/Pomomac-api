@@ -33,21 +33,13 @@ enum IntervalType {
 
 model User {
   id Int @id @default(autoincrement())
-  username String @unique
   email String @unique
   password String
   createdAt DateTime @default(now())
-  settingsId Int? @unique
-
   // Relations
-  pomodoroSessions PomodoroSession[]
+  sessions PomodoroSession[]
   tasks Task[]
   settings UserSetting?
-
-  // Additional fields
-  completedSessions Int @default(0)
-
-  @@index([settingsId])
 }
 
 model Task {
@@ -58,15 +50,9 @@ model Task {
   status TaskStatus @default(PENDING)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  deletedAt DateTime? // Soft delete field
-
   // Relations
   user User @relation(fields: [userId], references: [id])
-  pomodoroIntervals PomodoroInterval[]
-  pomodoroTaskMappings PomodoroTaskMapping[]
-
-  @@index([userId])
-  @@index([deletedAt])
+  intervals PomodoroInterval[]
 }
 
 model PomodoroSession {
@@ -77,14 +63,9 @@ model PomodoroSession {
   status SessionStatus @default(IN_PROGRESS)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  deletedAt DateTime? // Soft delete field
-
   // Relations
   user User @relation(fields: [userId], references: [id])
-  pomodoroIntervals PomodoroInterval[]
-
-  @@index([userId])
-  @@index([deletedAt])
+  intervals PomodoroInterval[]
 }
 
 model PomodoroInterval {
@@ -96,27 +77,9 @@ model PomodoroInterval {
   type IntervalType @default(WORK)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   // Relations
   session PomodoroSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   task Task @relation(fields: [taskId], references: [id])
-  pomodoroTaskMappings PomodoroTaskMapping[]
-
-  @@index([sessionId])
-  @@index([taskId])
-}
-
-model PomodoroTaskMapping {
-  id Int @id @default(autoincrement())
-  pomodoroIntervalId Int
-  taskId Int
-
-  // Relations
-  pomodoroInterval PomodoroInterval @relation(fields: [pomodoroIntervalId], references: [id], onDelete: Cascade)
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@index([pomodoroIntervalId])
-  @@index([taskId])
 }
 
 model UserSetting {
@@ -125,15 +88,8 @@ model UserSetting {
   pomodoroDuration Int @default(25)
   shortBreakDuration Int @default(5)
   longBreakDuration Int @default(15)
-  longBreakInterval Int @default(4)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  deletedAt DateTime? // Soft delete field
-  version Int @default(1) // Versioning field
-
   // Relations
-  user User? @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([deletedAt])
+  user User @relation(fields: [userId], references: [id])
 }
