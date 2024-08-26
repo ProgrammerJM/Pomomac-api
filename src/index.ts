@@ -8,7 +8,7 @@ require("dotenv").config();
 
 // Configure CORS
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://localhost:5000"], // Allow requests from this origin
+  origin: "http://localhost:3000", // Allow requests from this origin
   credentials: true, // Allow credentials (cookies, authorization headers, etc.)
 };
 
