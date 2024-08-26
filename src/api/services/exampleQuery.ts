@@ -57,3 +57,6 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+
+// CODE TO RUN
+// npx ts-node exampleQuery.ts
