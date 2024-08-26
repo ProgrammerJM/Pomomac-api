@@ -13,28 +13,127 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title     String   @db.VarChar(255)
-  content   String?
-  published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
 }
 
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  user   User    @relation(fields: [userId], references: [id])
-  userId Int     @unique
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum IntervalType {
+  WORK
+  SHORT_BREAK
+  LONG_BREAK
 }
 
 model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  posts   Post[]
-  profile Profile?
+  id Int @id @default(autoincrement())
+  username String @unique
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  settingsId Int? @unique
+
+  // Relations
+  pomodoroSessions PomodoroSession[]
+  tasks Task[]
+  settings UserSetting?
+
+  // Additional fields
+  completedSessions Int @default(0)
+
+  @@index([settingsId])
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+  userId Int
+  name String
+  description String
+  status TaskStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete field
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  pomodoroIntervals PomodoroInterval[]
+  pomodoroTaskMappings PomodoroTaskMapping[]
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model PomodoroSession {
+  id Int @id @default(autoincrement())
+  userId Int
+  startTime DateTime
+  endTime DateTime?
+  status SessionStatus @default(IN_PROGRESS)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete field
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  pomodoroIntervals PomodoroInterval[]
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model PomodoroInterval {
+  id Int @id @default(autoincrement())
+  sessionId Int
+  taskId Int
+  startTime DateTime
+  endTime DateTime?
+  type IntervalType @default(WORK)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  session PomodoroSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id])
+  pomodoroTaskMappings PomodoroTaskMapping[]
+
+  @@index([sessionId])
+  @@index([taskId])
+}
+
+model PomodoroTaskMapping {
+  id Int @id @default(autoincrement())
+  pomodoroIntervalId Int
+  taskId Int
+
+  // Relations
+  pomodoroInterval PomodoroInterval @relation(fields: [pomodoroIntervalId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([pomodoroIntervalId])
+  @@index([taskId])
+}
+
+model UserSetting {
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  pomodoroDuration Int @default(25)
+  shortBreakDuration Int @default(5)
+  longBreakDuration Int @default(15)
+  longBreakInterval Int @default(4)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete field
+  version Int @default(1) // Versioning field
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([deletedAt])
 }
