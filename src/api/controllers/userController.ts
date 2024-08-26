@@ -1,13 +1,24 @@
-export const SignUpUser = (req: Request, res: Response) => {
-  try {
-  } catch (err: any) {
-    console.error(err);
-  }
-};
+import { Request, Response } from "express";
+import userServices from "../services/userServices";
 
-export const SignInUser = (req: Request, res: Response) => {
+async function createUser(req: Request, res: Response) {
+  const { name, email } = req.body;
   try {
+    const user = await userServices.CreateUser(name, email);
+    console.log("User created successfully!");
+    res.status(201).json(user);
   } catch (err: any) {
-    console.error(err);
+    res.status(500).json({ error: err });
   }
-};
+}
+
+async function getAllUsers(req: Request, res: Response) {
+  try {
+    const users = await userServices.FindAllUsers();
+    res.status(200).json(users);
+  } catch (err: any) {
+    res.status(500).json({ error: err });
+  }
+}
+
+export default { createUser, getAllUsers };
