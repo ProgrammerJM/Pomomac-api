@@ -2,6 +2,12 @@ import express, { Application, Request, Response, NextFunction } from "express";
 
 const app: Application = express();
 
+app.use(express.json());
+
+import userRoutes from "./api/routers/userRoutes";
+
+app.use("/api", userRoutes);
+
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
