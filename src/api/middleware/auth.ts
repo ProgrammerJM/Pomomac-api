@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 const jwt = require("jsonwebtoken");
 
 interface CustomRequest extends Request {
-  payload?: { userId: string }; // Optional payload
+  payload?: { email: string; password: string }; // Optional payload
 }
 
 function isAuthenticated(
@@ -20,10 +20,11 @@ function isAuthenticated(
   try {
     const token = authorization.split(" ")[1];
     const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET) as {
-      userId: string;
+      email: string;
+      password: string;
     };
     req.payload = payload;
-  } catch (err: any) {
+  } catch (err: string | any) {
     res.status(401);
     if (err.name === "TokenExpiredError") {
       throw new Error(err.name);
