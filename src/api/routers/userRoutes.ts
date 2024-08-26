@@ -1,9 +1,31 @@
-import { Router } from "express";
-import userController from "../controllers/userController";
+import { Request, Response, NextFunction } from "express";
+import express from "express";
+import { isAuthenticated } from "../middleware/auth";
+import { findUserById } from "../services/userServices";
 
-const router: Router = Router();
+interface CustomRequest extends Request {
+  payload?: { userId: string }; // Optional payload
+}
 
-router.post("/signup", userController.createUser);
-router.get("/users", userController.getAllUsers);
+const router = express.Router();
+
+router.get(
+  "/profile",
+  isAuthenticated,
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    try {
+      if (!req.payload) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { userId } = req.payload;
+      const user = await findUserById(userId);
+      delete (user as { password?: any })?.password;
+      res.json(user);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;
