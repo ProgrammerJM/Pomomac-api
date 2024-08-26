@@ -24,6 +24,7 @@ async function authenticateSignUpUser(
   try {
     const { email, password } = req.body;
     if (!email || !password) {
+      res.status(400);
       throw new Error("You must provide an email and a password.");
     }
 
@@ -154,29 +155,29 @@ async function refreshToken(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-async function checkAuth(req: Request, res: Response, next: NextFunction) {
-  try {
-    const token = req.cookies.token; // Assuming token is stored in cookies
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized, Check Cookies" });
-    }
+// async function checkAuth(req: Request, res: Response, next: NextFunction) {
+//   try {
+//     const token = req.cookies.token; // Assuming token is stored in cookies
+//     if (!token) {
+//       return res.status(401).json({ error: "Unauthorized, Check Cookies" });
+//     }
 
-    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    const user = await findUserById(payload.userId);
+//     const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+//     const user = await findUserById(payload.userId);
 
-    if (!user) {
-      return res.status(401).json({ error: "Unauthorized, Check JWT Token" });
-    }
+//     if (!user) {
+//       return res.status(401).json({ error: "Unauthorized, Check JWT Token" });
+//     }
 
-    res.json({ user, message: "Authorized" });
-  } catch (err) {
-    next(err);
-  }
-}
+//     res.json({ user, message: "Authorized" });
+//   } catch (err) {
+//     next(err);
+//   }
+// }
 
 export default {
   authenticateSignUpUser,
   authenticateLoginUser,
   refreshToken,
-  checkAuth,
+  // checkAuth,
 };
