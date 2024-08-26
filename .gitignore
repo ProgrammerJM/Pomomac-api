@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment Variables
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build Directory
+dist/
+
+# Miscellaneous
+# Ignore request.rest if it's not needed by others
+# request.rest
