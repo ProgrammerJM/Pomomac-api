@@ -1,8 +1,11 @@
 # Dependencies
 node_modules/
 
-# Environment Variables
+# Exclude environment files
 .env
+
+# Include Prisma migration files
+!prisma/migrations/
 
 # Logs
 npm-debug.log*
