@@ -32,7 +32,7 @@ enum IntervalType {
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
   email String @unique
   password String
   createdAt DateTime @default(now())
@@ -40,11 +40,22 @@ model User {
   sessions PomodoroSession[]
   tasks Task[]
   settings UserSetting?
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id          String   @id @unique @default(uuid())
+  hashedToken String
+  userId      String
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revoked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Task {
-  id Int @id @default(autoincrement())
-  userId Int
+  id String @id @default(uuid())
+  userId String
   name String
   description String
   status TaskStatus @default(PENDING)
@@ -56,8 +67,8 @@ model Task {
 }
 
 model PomodoroSession {
-  id Int @id @default(autoincrement())
-  userId Int
+  id String @id @default(uuid())
+  userId String
   startTime DateTime
   endTime DateTime?
   status SessionStatus @default(IN_PROGRESS)
@@ -69,9 +80,9 @@ model PomodoroSession {
 }
 
 model PomodoroInterval {
-  id Int @id @default(autoincrement())
-  sessionId Int
-  taskId Int
+  id String @id @default(uuid())
+  sessionId String
+  taskId String
   startTime DateTime
   endTime DateTime?
   type IntervalType @default(WORK)
@@ -83,8 +94,8 @@ model PomodoroInterval {
 }
 
 model UserSetting {
-  id Int @id @default(autoincrement())
-  userId Int @unique
+  id String @id @default(uuid())
+  userId String @unique
   pomodoroDuration Int @default(25)
   shortBreakDuration Int @default(5)
   longBreakDuration Int @default(15)
