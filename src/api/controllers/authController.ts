@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 const { v4: uuidv4 } = require("uuid");
-import { generateRefreshToken, generateTokens } from "../utils/jwt";
+import { generateTokens } from "../utils/jwt";
 import {
   addRefreshTokenToWhitelist,
   deleteRefreshToken,
@@ -24,34 +24,36 @@ async function authenticateSignUpUser(
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400);
-      throw new Error("You must provide an email and a password.");
+      return res
+        .status(400)
+        .json({ error: "You must provide an email and a password." });
     }
 
     const existingUser = await findUserByEmail(email);
 
     if (existingUser) {
-      res.status(400);
-      throw new Error("Email already in use.");
+      return res.status(400).json({ error: "Email already in use." });
     }
 
-    const tokenUser = await CreateUser({
+    const user = await CreateUser({
       email,
       password,
     } as UserInterface);
+
     const jti = uuidv4();
     const { accessToken, refreshToken } = generateTokens(
       {
-        id: tokenUser.user.id,
-        email: tokenUser.user.email,
-        password: tokenUser.user.password,
+        id: user.createdUser.id,
+        email: user.createdUser.email,
+        password: user.createdUser.password,
       },
       jti
     );
+
     await addRefreshTokenToWhitelist({
       jti,
       refreshToken,
-      userId: tokenUser.user.id,
+      userId: user.createdUser.id,
     });
 
     res.json({
@@ -71,7 +73,7 @@ async function authenticateLoginUser(
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      res
+      return res
         .status(400)
         .json({ error: "You must provide an email and a password." });
     }
@@ -79,14 +81,12 @@ async function authenticateLoginUser(
     const existingUser = await findUserByEmail(email);
 
     if (!existingUser) {
-      res.status(403).json({ error: "Invalid email or password." });
-      throw new Error("Invalid email or password.");
+      return res.status(403).json({ error: "Invalid email or password." });
     }
 
     const validPassword = await bcrypt.compare(password, existingUser.password);
     if (!validPassword) {
-      res.status(403).json({ error: "Invalid login credentials." });
-      throw new Error("Invalid login credentials.");
+      return res.status(403).json({ error: "Invalid login credentials." });
     }
 
     const jti = uuidv4();
@@ -97,41 +97,55 @@ async function authenticateLoginUser(
       userId: existingUser.id,
     });
 
+    // Set the access token and refresh token cookies with the HttpOnly flag
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: true, // Prevent CSRF attacks
+    };
+
+    res.cookie("accessToken", accessToken, cookieOptions);
+    res.cookie("refreshToken", refreshToken, cookieOptions);
+
     res.json({
+      user: existingUser,
       accessToken,
       refreshToken,
-      user: existingUser.email,
     });
   } catch (err: any) {
     next(err);
   }
 }
 
-async function refreshToken(req: Request, res: Response, next: NextFunction) {
+async function getRefreshToken(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   try {
     const { refreshToken } = req.body;
+
+    console.log(refreshToken);
+    console.log(req.body);
     if (!refreshToken) {
       res.status(400).json({ error: "Missing refresh token." });
-      // throw new Error("Missing refresh token.");
     }
-    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
     const savedRefreshToken = await findRefreshTokenById(payload.jti);
 
     if (!savedRefreshToken || savedRefreshToken.revoked === true) {
-      res.status(401).json({ error: "Unauthorized" });
-      throw new Error("Unauthorized");
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const hashedToken = hashToken(refreshToken);
     if (hashedToken !== savedRefreshToken.hashedToken) {
-      res.status(401).json({ error: "Unauthorized" });
-      throw new Error("Unauthorized");
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const user = await findUserById(payload.userId);
     if (!user) {
-      res.status(401).json({ error: "Unauthorized" });
-      throw new Error("Unauthorized");
+      res.status(401);
+      throw new Error("User not found");
     }
 
     await deleteRefreshToken(savedRefreshToken.id);
@@ -146,6 +160,16 @@ async function refreshToken(req: Request, res: Response, next: NextFunction) {
       userId: user.id,
     });
 
+    // Set the access token and refresh token cookies with the HttpOnly flag
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: true, // Prevent CSRF attacks
+    };
+
+    res.cookie("accessToken", accessToken, cookieOptions);
+    res.cookie("refreshToken", refreshToken, cookieOptions);
+
     res.json({
       accessToken,
       refreshToken: newRefreshToken,
@@ -155,29 +179,9 @@ async function refreshToken(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// async function checkAuth(req: Request, res: Response, next: NextFunction) {
-//   try {
-//     const token = req.cookies.token; // Assuming token is stored in cookies
-//     if (!token) {
-//       return res.status(401).json({ error: "Unauthorized, Check Cookies" });
-//     }
-
-//     const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-//     const user = await findUserById(payload.userId);
-
-//     if (!user) {
-//       return res.status(401).json({ error: "Unauthorized, Check JWT Token" });
-//     }
-
-//     res.json({ user, message: "Authorized" });
-//   } catch (err) {
-//     next(err);
-//   }
-// }
-
 export default {
   authenticateSignUpUser,
   authenticateLoginUser,
-  refreshToken,
+  getRefreshToken,
   // checkAuth,
 };
