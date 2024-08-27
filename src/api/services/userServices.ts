@@ -10,7 +10,7 @@ async function CreateUser({
 }) {
   // Create User with the provided values
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await db.user.create({
+  const createdUser = await db.user.create({
     data: {
       email,
       password: hashedPassword,
@@ -20,14 +20,14 @@ async function CreateUser({
   // Create UserSettings with default values and link it to the user
   const userSettings = await db.userSetting.create({
     data: {
-      userId: user.id, // Link to the created user
+      userId: createdUser.id, // Link to the created user
       pomodoroDuration: 25,
       shortBreakDuration: 5,
       longBreakDuration: 15,
     },
   });
 
-  return { user, userSettings };
+  return { createdUser, userSettings };
 }
 
 async function findUserByEmail(email: string) {
