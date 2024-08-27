@@ -1,15 +1,35 @@
-// import { Request, Response } from "express";
-// import userServices from "../services/userServices";
+import { Request, Response, NextFunction } from "express";
+import { findUserById } from "../services/userServices";
 
-// async function createUser(req: Request, res: Response) {
-//   const { email, password } = req.body;
-//   try {
-//     const user = await userServices.CreateUser(email, password);
-//     console.log("User created successfully!");
-//     res.status(201).json(user);
-//   } catch (err: any) {
-//     res.status(500).json({ error: err });
-//   }
-// }
+// Define a custom request interface that extends the default Request
+interface CustomRequest extends Request {
+  payload?: { userId: string }; // Optional payload
+}
 
-// export default { createUser };
+async function getProfile(
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!req.payload) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { userId } = req.payload;
+    const user = await findUserById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Ensure sensitive information such as password is not sent in the response
+    const { password, ...userWithoutPassword } = user;
+
+    res.json(userWithoutPassword);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export default { getProfile };
