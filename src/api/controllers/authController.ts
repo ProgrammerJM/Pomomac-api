@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-const { v4: uuidv4 } = require("uuid");
+import { Request, Response, NextFunction, CookieOptions } from "express";
+// const { v4: uuidv4 } = require("uuid");
+import { v4 as uuidv4 } from "uuid";
 import { generateTokens } from "../utils/jwt";
 import {
   addRefreshTokenToWhitelist,
@@ -16,11 +17,7 @@ import bcrypt from "bcrypt";
 import { hashToken } from "../utils/hashToken";
 const jwt = require("jsonwebtoken");
 
-async function authenticateSignUpUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function signUpUser(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -57,6 +54,7 @@ async function authenticateSignUpUser(
     });
 
     res.json({
+      message: "User created successfully",
       accessToken,
       refreshToken,
     });
@@ -65,11 +63,7 @@ async function authenticateSignUpUser(
   }
 }
 
-async function authenticateLoginUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function loginUser(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -98,20 +92,55 @@ async function authenticateLoginUser(
     });
 
     // Set the access token and refresh token cookies with the HttpOnly flag
-    const cookieOptions = {
+    const cookieOptions: CookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV !== "development",
-      sameSite: true, // Prevent CSRF attacks
+      secure: process.env.NODE_ENV !== "production",
+      sameSite: "strict",
     };
 
     res.cookie("accessToken", accessToken, cookieOptions);
     res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.json({
-      user: existingUser,
+      message: "Logged in successfully.",
       accessToken,
       refreshToken,
     });
+  } catch (err: any) {
+    next(err);
+  }
+}
+
+async function logOutUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Missing refresh token." });
+    }
+
+    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
+    const savedRefreshToken = await findRefreshTokenById(payload.jti);
+
+    if (!savedRefreshToken || savedRefreshToken.revoked === true) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    await deleteRefreshToken(savedRefreshToken.id);
+
+    // Clear cookies with appropriate options
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.json({ message: "Logged out." });
   } catch (err: any) {
     next(err);
   }
@@ -159,14 +188,16 @@ async function getRefreshToken(
     });
 
     // Set the access token and refresh token cookies with the HttpOnly flag
-    const cookieOptions = {
+    res.cookie("accessToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV !== "development",
-      sameSite: true, // Prevent CSRF attacks
-    };
-
-    res.cookie("accessToken", accessToken, cookieOptions);
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    res.cookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
 
     res.json({
       accessToken,
@@ -174,12 +205,13 @@ async function getRefreshToken(
     });
   } catch (err) {
     next(err);
+    return;
   }
 }
 
 export default {
-  authenticateSignUpUser,
-  authenticateLoginUser,
+  signUpUser,
+  loginUser,
+  logOutUser,
   getRefreshToken,
-  // checkAuth,
 };
