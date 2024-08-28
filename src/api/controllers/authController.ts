@@ -123,10 +123,8 @@ async function getRefreshToken(
   next: NextFunction
 ) {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken;
 
-    console.log(refreshToken);
-    console.log(req.body);
     if (!refreshToken) {
       res.status(400).json({ error: "Missing refresh token." });
     }
