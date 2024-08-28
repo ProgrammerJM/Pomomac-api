@@ -3,8 +3,9 @@ import authController from "../controllers/authController";
 
 const router: Router = Router();
 
-router.post("/signup", authController.authenticateSignUpUser);
-router.post("/login", authController.authenticateLoginUser);
+router.post("/signup", authController.signUpUser);
+router.post("/login", authController.loginUser);
+router.post("/logout", authController.logOutUser);
 router.post("/refreshToken", authController.getRefreshToken);
 
 export default router;
