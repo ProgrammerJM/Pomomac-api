@@ -120,13 +120,10 @@ async function logOutUser(req: Request, res: Response, next: NextFunction) {
     }
 
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
-    const savedRefreshToken = await findRefreshTokenById(payload.jti);
+    console.log("JWT Payload:", payload);
 
-    if (!savedRefreshToken || savedRefreshToken.revoked === true) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    await deleteRefreshToken(savedRefreshToken.id);
+    // Delete based on jti from payload
+    await deleteRefreshToken(payload.jti); // Use jti for deletion
 
     // Set the access token and refresh token cookies with the HttpOnly flag
     const cookieOptions: CookieOptions = {
@@ -140,7 +137,8 @@ async function logOutUser(req: Request, res: Response, next: NextFunction) {
     res.clearCookie("refreshToken", cookieOptions);
 
     res.json({ message: "Logged out." });
-  } catch (err: any) {
+  } catch (err) {
+    console.error("Logout error:", err);
     next(err);
   }
 }
@@ -157,15 +155,24 @@ async function getRefreshToken(
       res.status(400).json({ error: "Missing refresh token." });
     }
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
+    console.log("JWT Payload:", payload);
     const savedRefreshToken = await findRefreshTokenById(payload.jti);
+    console.log("Retrieved refresh token:", savedRefreshToken);
 
-    if (!savedRefreshToken || savedRefreshToken.revoked === true) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!savedRefreshToken) {
+      return res
+        .status(401)
+        .json({ error: "Unauthorized: Refresh token not found." });
     }
 
     const hashedToken = hashToken(refreshToken);
+    console.log("Hashed token:", hashedToken);
+    console.log("Saved hashed token:", savedRefreshToken.hashedToken);
+
     if (hashedToken !== savedRefreshToken.hashedToken) {
-      return res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: "Unauthorized hashedToken not match!" });
+      throw new Error("Unauthorized hashedToken not match!");
+      // .json({ error: "Unauthorized hashedToken not match!" });
     }
 
     const user = await findUserById(payload.userId);
@@ -175,6 +182,7 @@ async function getRefreshToken(
     }
 
     await deleteRefreshToken(savedRefreshToken.id);
+
     const jti = uuidv4();
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(
       user,
@@ -203,7 +211,6 @@ async function getRefreshToken(
     });
   } catch (err) {
     next(err);
-    return;
   }
 }
 
