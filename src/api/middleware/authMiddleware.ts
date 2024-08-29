@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 interface CustomRequest extends Request {
   payload?: { userId: string }; // Optional payload
@@ -18,7 +18,9 @@ function isAuthenticated(
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET!);
+    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
+      userId: string;
+    };
 
     req.payload = payload;
 
