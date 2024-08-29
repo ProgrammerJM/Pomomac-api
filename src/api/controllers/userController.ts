@@ -13,14 +13,14 @@ async function getProfile(
 ) {
   try {
     if (!req.payload) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { userId } = req.payload;
     const user = await findUserById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // Ensure sensitive information such as password is not sent in the response
