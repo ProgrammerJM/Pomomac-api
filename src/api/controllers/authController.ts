@@ -94,7 +94,7 @@ async function loginUser(req: Request, res: Response, next: NextFunction) {
     // Set the access token and refresh token cookies with the HttpOnly flag
     const cookieOptions: CookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV !== "production",
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     };
 
@@ -128,17 +128,16 @@ async function logOutUser(req: Request, res: Response, next: NextFunction) {
 
     await deleteRefreshToken(savedRefreshToken.id);
 
+    // Set the access token and refresh token cookies with the HttpOnly flag
+    const cookieOptions: CookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    };
+
     // Clear cookies with appropriate options
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
 
     res.json({ message: "Logged out." });
   } catch (err: any) {
@@ -188,16 +187,15 @@ async function getRefreshToken(
     });
 
     // Set the access token and refresh token cookies with the HttpOnly flag
-    res.cookie("accessToken", {
+    const cookieOptions: CookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-    });
-    res.cookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    };
+
+    // Set the access token and refresh token cookies with the HttpOnly flag
+    res.cookie("accessToken", accessToken, cookieOptions);
+    res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.json({
       accessToken,
