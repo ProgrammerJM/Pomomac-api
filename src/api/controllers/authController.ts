@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction, CookieOptions } from "express";
-// const { v4: uuidv4 } = require("uuid");
 import { v4 as uuidv4 } from "uuid";
 import { generateTokens } from "../utils/jwt";
 import {
@@ -15,7 +14,8 @@ import {
 import { UserInterface } from "../interfaces/userInterface";
 import bcrypt from "bcrypt";
 import { hashToken } from "../utils/hashToken";
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
+import { JwtPayload } from "../interfaces/userInterface";
 
 async function signUpUser(req: Request, res: Response, next: NextFunction) {
   try {
@@ -55,8 +55,6 @@ async function signUpUser(req: Request, res: Response, next: NextFunction) {
 
     res.json({
       message: "User created successfully",
-      accessToken,
-      refreshToken,
     });
   } catch (err: any) {
     next(err);
@@ -103,8 +101,6 @@ async function loginUser(req: Request, res: Response, next: NextFunction) {
 
     res.json({
       message: "Logged in successfully.",
-      accessToken,
-      refreshToken,
     });
   } catch (err: any) {
     next(err);
@@ -119,8 +115,10 @@ async function logOutUser(req: Request, res: Response, next: NextFunction) {
       return res.status(400).json({ error: "Missing refresh token." });
     }
 
-    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
-    console.log("JWT Payload:", payload);
+    const payload = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET!
+    ) as JwtPayload;
 
     // Delete based on jti from payload
     await deleteRefreshToken(payload.jti); // Use jti for deletion
@@ -152,12 +150,14 @@ async function getRefreshToken(
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
-      res.status(400).json({ error: "Missing refresh token." });
+      return res.status(400).json({ error: "Missing refresh token." });
     }
-    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
-    console.log("JWT Payload:", payload);
+    const payload = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET!
+    ) as JwtPayload;
+
     const savedRefreshToken = await findRefreshTokenById(payload.jti);
-    console.log("Retrieved refresh token:", savedRefreshToken);
 
     if (!savedRefreshToken) {
       return res
@@ -166,19 +166,19 @@ async function getRefreshToken(
     }
 
     const hashedToken = hashToken(refreshToken);
-    console.log("Hashed token:", hashedToken);
-    console.log("Saved hashed token:", savedRefreshToken.hashedToken);
 
     if (hashedToken !== savedRefreshToken.hashedToken) {
-      res.status(401).json({ error: "Unauthorized hashedToken not match!" });
-      throw new Error("Unauthorized hashedToken not match!");
-      // .json({ error: "Unauthorized hashedToken not match!" });
+      // res.status(401).json({ error: "Unauthorized hashedToken not match!" });
+      // throw new Error("Unauthorized hashedToken not match!");
+      return res
+        .status(401)
+        .json({ error: "Unauthorized hashedToken not match!" });
     }
 
     const user = await findUserById(payload.userId);
     if (!user) {
-      res.status(401);
-      throw new Error("User not found");
+      return res.status(401).json({ error: "User not found" });
+      // throw new Error("User not found");
     }
 
     await deleteRefreshToken(savedRefreshToken.id);
@@ -206,8 +206,7 @@ async function getRefreshToken(
     res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.json({
-      accessToken,
-      refreshToken: newRefreshToken,
+      message: "Token refreshed successfully.",
     });
   } catch (err) {
     next(err);
