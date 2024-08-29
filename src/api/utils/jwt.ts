@@ -1,10 +1,10 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 import { UserInterface } from "../interfaces/userInterface";
 
 // Usually I keep the token between 5 minutes - 15 minutes
 function generateAccessToken(user: UserInterface) {
-  return jwt.sign({ userId: user.id }, process.env.JWT_ACCESS_SECRET, {
-    expiresIn: "15m",
+  return jwt.sign({ userId: user.id }, process.env.JWT_ACCESS_SECRET!, {
+    expiresIn: "5m",
   });
 }
 
@@ -18,7 +18,7 @@ function generateRefreshToken(user: UserInterface, jti: string) {
       userId: user.id,
       jti,
     },
-    process.env.JWT_REFRESH_SECRET,
+    process.env.JWT_REFRESH_SECRET!,
     {
       expiresIn: "7d",
     }
