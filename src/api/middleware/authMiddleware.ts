@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 interface CustomRequest extends Request {
-  payload?: { userId: string }; // Optional payload
+  payload?: { userId: string; jti: string; iat: number; exp: number }; // Optional payload
 }
 
 function isAuthenticated(
@@ -20,17 +20,21 @@ function isAuthenticated(
   try {
     const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
       userId: string;
+      jti: string;
+      iat: number;
+      exp: number;
     };
 
     req.payload = payload;
-
-    next(); // Proceed to the next middleware or route handler
   } catch (err: any) {
+    res.status(401);
     if (err.name === "TokenExpiredError") {
       return res.status(401).json({ error: "🚫 Token expired 🚫" });
     }
     return res.status(401).json({ error: "🚫 Invalid token 🚫" });
   }
+
+  return next();
 }
 
 export { isAuthenticated };
