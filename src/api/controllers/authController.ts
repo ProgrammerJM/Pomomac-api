@@ -19,11 +19,9 @@ import { JwtPayload } from "../interfaces/userInterface";
 
 async function signUpUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ error: "You must provide an email and a password." });
+    const { firstName, lastName, email, password } = req.body;
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ error: "All fields are required." });
     }
 
     const existingUser = await findUserByEmail(email);
@@ -33,6 +31,8 @@ async function signUpUser(req: Request, res: Response, next: NextFunction) {
     }
 
     const user = await CreateUser({
+      firstName,
+      lastName,
       email,
       password,
     } as UserInterface);
@@ -41,6 +41,8 @@ async function signUpUser(req: Request, res: Response, next: NextFunction) {
     const { accessToken, refreshToken } = generateTokens(
       {
         id: user.createdUser.id,
+        firstName: user.createdUser.firstName,
+        lastName: user.createdUser.lastName,
         email: user.createdUser.email,
         password: user.createdUser.password,
       },
