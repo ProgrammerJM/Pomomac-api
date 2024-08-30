@@ -35,6 +35,8 @@ model User {
   id String @id @default(uuid())
   email String @unique
   password String
+  firstName String
+  lastName String
   createdAt DateTime @default(now())
   // Relations
   sessions PomodoroSession[]
@@ -96,6 +98,8 @@ model PomodoroInterval {
 model UserSetting {
   id String @id @default(uuid())
   userId String @unique
+  firstName String
+  lastName String
   pomodoroDuration Int @default(25)
   shortBreakDuration Int @default(5)
   longBreakDuration Int @default(15)
