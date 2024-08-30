@@ -1,17 +1,19 @@
+import { UserInterface } from "../interfaces/userInterface";
 import { db } from "../utils/db";
 import bcrypt from "bcrypt";
 
 async function CreateUser({
+  firstName,
+  lastName,
   email,
   password,
-}: {
-  email: string;
-  password: string;
-}) {
+}: UserInterface) {
   // Create User with the provided values
   const hashedPassword = await bcrypt.hash(password, 10);
   const createdUser = await db.user.create({
     data: {
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
     },
@@ -21,6 +23,8 @@ async function CreateUser({
   const userSettings = await db.userSetting.create({
     data: {
       userId: createdUser.id, // Link to the created user
+      firstName,
+      lastName,
       pomodoroDuration: 25,
       shortBreakDuration: 5,
       longBreakDuration: 15,
