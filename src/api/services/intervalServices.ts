@@ -1,4 +1,4 @@
-import { Interval } from "../interfaces/intervalInterface";
+import { Interval } from "../interfaces/pomoInterface";
 import { db } from "../utils/db";
 
 const createInterval = async (data: Interval) => {

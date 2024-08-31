@@ -1,4 +1,4 @@
-import { Task } from "../interfaces/taskInterface";
+import { Task } from "../interfaces/pomoInterface";
 import { db } from "../utils/db";
 
 const createTask = async (data: Task) => {

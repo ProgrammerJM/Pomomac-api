@@ -1,4 +1,4 @@
-import { Session } from "../interfaces/sessionInterface";
+import { Session } from "../interfaces/pomoInterface";
 import { db } from "../utils/db";
 
 const createSession = async (data: Session) => {
