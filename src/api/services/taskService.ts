@@ -1,21 +1,21 @@
 import { Task } from "../interfaces/pomoInterface";
 import { db } from "../utils/db";
 
-const createTask = async (data: Task) => {
-  return await db.task.create({
-    data: {
-      userId: data.userId,
-      name: data.name,
-      description: data.description,
-      status: data.status,
-    },
-  });
-};
-
 const getTask = async (userId: string) => {
   return await db.task.findMany({
     where: {
       userId,
+    },
+  });
+};
+
+const createTask = async (userId: string, data: Task) => {
+  return await db.task.create({
+    data: {
+      userId: userId,
+      name: data.name,
+      description: data.description,
+      status: "PENDING",
     },
   });
 };
