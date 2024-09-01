@@ -1,20 +1,35 @@
 import taskService from "../services/taskService";
 import { Request, Response, NextFunction } from "express";
 
-const createTask = async (req: Request, res: Response, next: NextFunction) => {
+interface CustomRequest extends Request {
+  payload?: { userId: string; jti: string; iat: number; exp: number }; // Optional payload
+}
+
+const getTask = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const task = await taskService.createTask(req.body);
-    res.status(201).json(task);
+    const userId = req.payload?.userId;
+    console.log("GET TASK userID: " + userId);
+    const tasks = await taskService.getTask(userId!);
+    res.status(200).json(tasks);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 };
 
-const getTask = async (req: Request, res: Response, next: NextFunction) => {
+const createTask = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { userId } = req.params;
-    const tasks = await taskService.getTask(userId);
-    res.status(200).json(tasks);
+    const userId = req.payload?.userId;
+    console.log("CREATE TASK userID: " + userId);
+    const task = await taskService.createTask(userId!, req.body);
+    res.status(201).json(task);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
