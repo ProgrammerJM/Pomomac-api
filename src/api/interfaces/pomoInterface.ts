@@ -6,7 +6,7 @@ export interface Task {
   userId: string;
   name: string;
   description: string;
-  status: TaskStatus;
+  status?: TaskStatus;
 }
 
 export interface Session {
