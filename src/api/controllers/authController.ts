@@ -215,9 +215,32 @@ async function getRefreshToken(
   }
 }
 
+// async function checkAuth(req: Request, res: Response, next: NextFunction) {
+//   try {
+//     const accessToken = req.cookies.accessToken;
+
+//     if (!accessToken) {
+//       return res.status(401).json({ error: "Missing refresh token." });
+//     }
+
+//     const payload = jwt.verify(
+//       accessToken,
+//       process.env.JWT_ACCESS_SECRET!
+//     ) as JwtPayload;
+
+//     res.json({
+//       message: "User is authenticated.",
+//       user: payload,
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// }
+
 export default {
   signUpUser,
   loginUser,
   logOutUser,
   getRefreshToken,
+  // checkAuth,
 };
