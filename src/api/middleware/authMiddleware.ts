@@ -12,8 +12,6 @@ function isAuthenticated(
 ) {
   const token = req.cookies.accessToken; // Get the token from cookies
 
-  console.log(token);
-
   if (!token) {
     res.status(401);
     throw new Error("🚫 Un-Authorized 🚫");
@@ -28,7 +26,6 @@ function isAuthenticated(
     };
 
     req.payload = payload;
-    console.log("Payload: ", payload); // Debugging line
   } catch (err: any) {
     res.status(401);
     if (err.name === "TokenExpiredError") {

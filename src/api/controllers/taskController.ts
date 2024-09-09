@@ -12,7 +12,6 @@ const getTask = async (
 ) => {
   try {
     const userId = req.payload?.userId;
-    console.log("GET TASK userID: " + userId);
     const tasks = await taskService.getTask(userId!);
     res.status(200).json(tasks);
   } catch (error: any) {
